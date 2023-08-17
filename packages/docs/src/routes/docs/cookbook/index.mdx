@@ -2,6 +2,7 @@
 title: Cookbook | Overview
 contributors:
   - mhevery
+  - gederer
 ---
 
 # Cookbook
@@ -10,3 +11,50 @@ A cookbook contains a collection of useful patterns for solving common problems 
 
 For example:
 - How do I build a modal dialog popup in Qwik?
+
+## Manual serialization
+
+Qwik has built-in serialization/deserialization from the server to the client that covers most cases. From time to time, you may need to return something from a loader or an action that Qwik can't (yet!) serialize. For these cases, you can use a serialization library to handle this manually.
+
+> An API for adding your own custom serializers is on our roadmap, too. This recipe is intended to tide you over until this feature explodes onto the scene.
+
+In this Recipe, we'll use [Superjson](https://github.com/blitz-js/superjson), a popular serialization library.
+
+Install Superjson with:
+
+```ts
+npm install superjson
+```
+
+Now, say you want to return an instance of `MyCustomClass` from a `routeLoader$`. Here's how you'd do it:
+
+```tsx
+import { component$, useVisibleTask$ } from "@builder.io/qwik";
+import { routeLoader$, type DocumentHead } from "@builder.io/qwik-city";
+import superjson from 'superjson';
+
+class MyCustomClass {
+  constructor({name}: {name: string}) {
+    this.name = name;
+  }
+  name: string;
+}
+
+export const useDataLoader = routeLoader$(() => {
+  const instance = new MyCustomClass({name: "Mr. Foo"});
+  const jsonString = superjson.stringify(instance);
+  return jsonString;
+});
+
+export default component$(() => {
+  const dataLoader = useDataLoader();
+
+  return (
+    <>
+      <pre>{JSON.stringify((superjson.parse(dataLoader.value) as typeof MyCustomClass).name}</pre>
+    </>
+  );
+});
+```
+
+Notice how we cast the return value of 
